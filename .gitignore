@@ -1,0 +1,7 @@
+#  file csv
+output/raw_qttg_1m/
+output/spark_lake/
+*.csv
+
+# cac file logs
+airflow-local/logs/
