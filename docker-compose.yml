@@ -2,7 +2,7 @@ version: '3.8'
 
 x-spark-common: &spark-common
   image: apache/spark:3.5.0
-  command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+  # command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
   volumes:
     - ./spark/apps/qttg:/opt/spark/apps/qttg:ro
     - ./output/raw_qttg_1m:/opt/spark/data/raw_qttg_1m:ro
@@ -36,20 +36,22 @@ services:
   spark-master:
     <<: *spark-common
     container_name: tst-spark-master
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.master.Master
     ports:
       - "8088:8080"
       - "7077:7077"
-    environment:
-      - SPARK_MODE=master
 
   spark-worker:
     <<: *spark-common
     container_name: tst-spark-worker
+    command: 
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.worker.Worker
+      - spark://spark-master:7077
     ports:
       - "8081:8081"
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
     depends_on:
       - spark-master
 

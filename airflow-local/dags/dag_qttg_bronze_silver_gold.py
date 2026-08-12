@@ -80,4 +80,4 @@ with DAG(
         execution_timeout=timedelta(minutes=30),
     )
 
-    bronze >> silver >> gold
+    bronze >> silver >> gold >> validate
