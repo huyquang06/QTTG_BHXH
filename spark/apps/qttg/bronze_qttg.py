@@ -1,18 +1,20 @@
 import argparse
 import sys
+
 from pyspark.sql import SparkSession
+
 from schemas import MASTER_SCHEMA, DETAIL_SCHEMA
 
 def main():
     parser = argparse.ArgumentParser(description="Bronze Layer Ingestion")
     parser.add_argument(
         "--input-dir",
-        default="file:///opt/spark/data/raw_qttg_1m",
+        required=True,
         help="Path to CSV File",
     )
     parser.add_argument(
         "--output-dir",
-        default="file:///opt/spark/data/lake/bronze",
+        required=True,
         help="Path to Parquet Broze File",
     )
     args = parser.parse_args()

@@ -5,3 +5,5 @@ output/spark_lake/
 
 # cac file logs
 airflow-local/logs/
+
+*.duckdb

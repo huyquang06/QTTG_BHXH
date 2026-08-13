@@ -1,7 +1,8 @@
 import argparse
 import sys
+
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, row_number
+from pyspark.sql.functions import coalesce, col, lit, regexp_replace, row_number, trim, when
 from pyspark.sql.window import Window
 
 
@@ -9,12 +10,12 @@ def main():
     parser = argparse.ArgumentParser(description="Silver Layer Processing")
     parser.add_argument(
         "--input-dir",
-        default="file:///opt/spark/data/lake/bronze",
+        required=True,
         help="Đường dẫn chứa Parquet Bronze",
     )
     parser.add_argument(
         "--output-dir",
-        default="file:///opt/spark/data/lake/silver",
+        required=True,
         help="Đường dẫn ghi Parquet Silver",
     )
     args = parser.parse_args()
@@ -26,48 +27,55 @@ def main():
     )
 
     try:
-        # 1. Đọc dữ liệu từ Bronze Lake
         df_bronze_master = spark.read.parquet(f"{args.input_dir}/master")
         df_bronze_detail = spark.read.parquet(f"{args.input_dir}/detail")
 
-        # 2. Định nghĩa Window Spec để chọn bản ghi mới nhất của mỗi người
+        # lam sach cho bronze master
+        df_cleaned_master = (
+            df_bronze_master.withColumn("SO_SO_BHXH", trim(col("SO_SO_BHXH")))
+            .withColumn("THANG_BD", regexp_replace(col("THANG_BD"), r"[^0-9]", ""))
+            .withColumn("THANG_KT", regexp_replace(col("THANG_KT"), r"[^0-9]", ""))
+        )
+
         window_spec = Window.partitionBy("SO_SO_BHXH").orderBy(
             col("CREATED_AT").desc(), col("ID").desc()
         )
-
-        # 3. Đánh số thứ tự và chỉ giữ bản ghi mới nhất (rn = 1)
         df_silver_master = (
-            df_bronze_master.withColumn("rn", row_number().over(window_spec))
-            .filter(col("rn") == 1)
+            df_cleaned_master.withColumn("rn", row_number().over(window_spec))
+            .withColumn("IS_DELETED", when(col("rn") == 1, 0).otherwise(1))
             .drop("rn")
         )
 
-        # 4. Lọc Detail chỉ thuộc về các MASTER_ID mới nhất
-        df_latest_ids = df_silver_master.select(
-            col("ID").alias("LATEST_MASTER_ID")
+        # lam sach cho bronze detail
+        df_cleaned_detail = (
+            df_bronze_detail.withColumn("MA_DON_VI", trim(col("MA_DON_VI")))
+            .withColumn("TU_THANG", regexp_replace(col("TU_THANG"), r"[^0-9]", ""))
+            .withColumn("DEN_THANG", regexp_replace(col("DEN_THANG"), r"[^0-9]", ""))
+            .withColumn("MUC_LUONG", coalesce(col("MUC_LUONG"), lit(0)))
         )
 
-        df_silver_detail = df_bronze_detail.join(
-            df_latest_ids,
-            df_bronze_detail["MASTER_ID"] == df_latest_ids["LATEST_MASTER_ID"],
+        df_active_master = df_silver_master.filter(col("IS_DELETED") == 0).select(
+            col("ID").alias("M_ID"), col("NLD_ID").alias("M_NLD_ID")
+        )
+        df_silver_detail = df_cleaned_detail.join(
+            df_active_master,
+            (df_cleaned_detail["MASTER_ID"] == df_active_master["M_ID"])
+            & (df_cleaned_detail["NLD_ID"] == df_active_master["M_NLD_ID"]),
             "inner",
-        ).drop("LATEST_MASTER_ID")
+        ).drop("M_ID", "M_NLD_ID")
 
-        # 5. Ghi đè kết quả ra Silver Lake dạng Parquet
         master_out = f"{args.output_dir}/master"
         detail_out = f"{args.output_dir}/detail"
-
         df_silver_master.write.mode("overwrite").parquet(master_out)
         df_silver_detail.write.mode("overwrite").parquet(detail_out)
 
-        # 6. Kiểm tra đếm dòng và xuất Log
-        person_rows = spark.read.parquet(master_out).count()
+        person_rows = (
+            spark.read.parquet(master_out).filter(col("IS_DELETED") == 0).count()
+        )
         detail_rows = spark.read.parquet(detail_out).count()
-
         print(
             f"LAYER=SILVER STATUS=SUCCESS PERSON_ROWS={person_rows} DETAIL_ROWS={detail_rows}"
         )
-
     except Exception as e:
         print(f"LAYER=SILVER STATUS=FAILED ERROR={str(e)}", file=sys.stderr)
         sys.exit(1)
