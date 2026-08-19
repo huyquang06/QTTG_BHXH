@@ -57,20 +57,22 @@ services:
 
   # --- AIRFLOW SERVICES ---
   postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - airflow-postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airflow"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks:
-      - spark-net
+        image: postgres:15
+        environment:
+          POSTGRES_USER: airflow
+          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: airflow
+        ports:
+          - "5432:5432"  # <--- Mở port kết nối từ máy thật (host)
+        volumes:
+          - airflow-postgres:/var/lib/postgresql/data
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U airflow"]
+          interval: 5s
+          timeout: 5s
+          retries: 10
+        networks:
+          - spark-net
 
   airflow-init:
     <<: *airflow-common

@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: qttg-backend
+  datasource:
+    # URL ket noi toi PostgreSQL dang chay trong Docker qua cong 5432
+    url: jdbc:postgresql://localhost:5432/airflow?options=-c%20timezone=Asia/Ho_Chi_Minh
+    username: airflow
+    password: airflow
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    # Bat hien thi cac cau lenh SQL ma Hibernate tu sinh ra o console log de tien debug
+    show-sql: true
+    hibernate:
+      # ddl-auto: update nghia la Hibernate chi cap nhat cau truc bang neu co thay doi
+      # chu khong xoa bang cu (tranh mat du lieu ma Spark da nap)
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Cong chay ung dung Spring Boot (da doi sang 8083 de tranh trung pgAdmin)
+server:
+  port: 8083
