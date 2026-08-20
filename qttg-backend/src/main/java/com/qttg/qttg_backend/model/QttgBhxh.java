@@ -47,6 +47,6 @@ package com.qttg.qttg_backend.model;
         // mappedBy = "master" liên kết tới thuộc tính "master" trong lớp QttgBhxhDetail
         // FetchType.LAZY để chỉ khi cần thiết mới truy vấn bảng Detail, tránh tải nặng DB
         @OneToMany(mappedBy = "master", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-        @JsonManagedReference // Quản lý serialize JSON từ cha xuống con
+        @JsonManagedReference 
         private List<QttgBhxhDetail> details;
     }

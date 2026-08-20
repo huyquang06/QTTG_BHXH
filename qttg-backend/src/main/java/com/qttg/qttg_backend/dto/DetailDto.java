@@ -1,3 +1,4 @@
+// Đại diện cho 1 dòng chi tiết quá trình tham gia BHXH
 package com.qttg.qttg_backend.dto;
 
     import lombok.AllArgsConstructor;
