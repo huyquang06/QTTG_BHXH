@@ -15,16 +15,20 @@ public class GlobalExceptionHandler {
         // Bắt lỗi 1: Khi người dùng truyền tham số sai kiểu dữ liệu (Ví dụ: truyền page=abc)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<SearchResponse<Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+            // Kiểm tra an toàn xem getRequiredType() có bị null không
+        Class<?> requiredType = ex.getRequiredType();
+        String typeName = (requiredType != null) ? requiredType.getSimpleName() : "Unknown";
+
         String message = String.format("Tham số '%s' truyền sai kiểu dữ liệu. Yêu cầu kiểu: %s",
-                ex.getName(), ex.getRequiredType().getSimpleName());
+            ex.getName(), typeName);
 
         log.error("[API ERROR] Lỗi kiểu dữ liệu tham số: {}", message);
 
         SearchResponse<Object> response = SearchResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(message)
-                .data(null)
-                .build();
+            .status(HttpStatus.BAD_REQUEST.value())
+            .message(message)
+            .data(null)
+            .build();
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
@@ -43,7 +47,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-        // Bắt lỗi 3: Bắt mọi Exception không xác định khác (Lỗi hệ thống 500)
+    // Bắt lỗi 3: Bắt mọi Exception không xác định khác (Lỗi hệ thống 500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<SearchResponse<Object>> handleGeneralException(Exception ex) {
             // Ghi lại đầy đủ Stacktrace ra console/file để lập trình viên dễ debug lỗi

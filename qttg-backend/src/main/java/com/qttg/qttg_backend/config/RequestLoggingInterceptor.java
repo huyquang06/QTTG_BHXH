@@ -3,6 +3,8 @@ package com.qttg.qttg_backend.config;
     import jakarta.servlet.http.HttpServletRequest;
     import jakarta.servlet.http.HttpServletResponse;
     import lombok.extern.slf4j.Slf4j;
+    import org.springframework.lang.NonNull; // Import chuẩn của Spring
+    import org.springframework.lang.Nullable; // Import chuẩn của Spring
     import org.springframework.stereotype.Component;
     import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -11,7 +13,10 @@ package com.qttg.qttg_backend.config;
     public class RequestLoggingInterceptor implements HandlerInterceptor {
 
         @Override
-        public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        public boolean preHandle(
+                @NonNull HttpServletRequest request,
+                @NonNull HttpServletResponse response,
+                @NonNull Object handler) throws Exception {
             String uri = request.getRequestURI();
             String method = request.getMethod();
             String queryString = request.getQueryString();
@@ -23,7 +28,11 @@ package com.qttg.qttg_backend.config;
         }
 
         @Override
-        public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        public void afterCompletion(
+                @NonNull HttpServletRequest request,
+                @NonNull HttpServletResponse response,
+                @NonNull Object handler,
+                @Nullable Exception ex) throws Exception { // ex có thể bị null nếu không có lỗi
             if (ex != null) {
                 log.error("[API RESPONSE ERROR] URL: {} | Failed with exception: ", request.getRequestURI(), ex);
             } else {

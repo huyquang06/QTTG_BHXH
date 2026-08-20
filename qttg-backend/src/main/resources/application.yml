@@ -18,6 +18,17 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 100 
+
+# Cấu hình logging để show audit log
+logging:
+  file:
+    # Địa chỉ file lưu log
+    name: logs/qttg-backend.log
+  level:
+    # Đặt mức log mặc định là INFO
+    root: INFO
+        
 
 # Cong chay ung dung Spring Boot (da doi sang 8083 de tranh trung pgAdmin)
 server:

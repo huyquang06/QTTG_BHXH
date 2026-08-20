@@ -91,3 +91,41 @@ Phần bảng báo cáo tháng mẫu ở Gold:
 Log Validate với `ERROR_ROWS=0`:
 
 ![Validate log](./result/validate.png)
+
+
+ ---
+
+  ## Backend API (Spring Boot) - RESTful API Tra cứu
+
+    Phần này cung cấp API tra cứu thông tin quá trình đóng BHXH từ cơ sở dữ liệu PostgreSQL đã được nạp bởi Spark Job.
+
+  ### 1. Yêu cầu hệ thống
+    * Java JDK 17 hoặc 21
+    * Maven (sử dụng Maven Wrapper `./mvnw` đi kèm dự án)
+
+  ### 2. Hướng dẫn khởi chạy ứng dụng API
+    1. Đảm bảo container Postgres của bạn đang chạy:
+       ```bash
+       docker compose up -d postgres
+
+  2. Di chuyển vào thư mục backend và chạy lệnh:
+    cd qttg-backend
+    ./mvnw spring-boot:run
+  Ứng dụng sẽ khởi chạy trên cổng 8083.
+
+  ### 3. Hướng dẫn Kiểm thử (Testing)
+
+  • Trình duyệt kiểm thử tự động Swagger UI:
+  Truy cập: http://localhost:8083/swagger-ui/index.html để thực hiện gửi request test trực tiếp trên giao diện đồ họa.
+
+  • Gọi API phân trang (Nested JSON):
+  GET http://localhost:8083/api/v1/users/search?keyword=Người&page=0&size=2
+  
+  • Kiểm thử xử lý lỗi ngoại lệ (Global Exception Handler):
+  GET http://localhost:8083/api/v1/users/search?keyword=Người&page=abc (API trả về lỗi 400 JSON sạch đẹp kèm thông tin lỗi thân thiện).
+
+  ### 4. Tối ưu hóa hiệu năng & Khắc phục lỗi N+1 Query
+
+  Hệ thống được cấu hình tối ưu hóa thông qua Hibernate Batch Fetching (default_batch_fetch_size: 100) trong file application.yml. Giải pháp này
+  gom các khóa ngoại con lại và tải trong một câu lệnh duy nhất sử dụng mệnh đề IN (dạng master_id = any (?) trên Postgres), giúp giảm số lượng
+  truy vấn SQL từ N+1 xuống cố định chỉ còn 2 truy vấn cho mỗi lượt phân trang, cải thiện tốc độ tải trang đáng kể.
